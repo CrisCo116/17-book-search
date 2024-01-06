@@ -11,6 +11,10 @@
     "render-build": "npm install && npm run build",
     "postinstall": "npm rebuild bcrypt"
   },
+  "engines": {
+    "node": "14.x",
+    "npm": "6.x"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
