@@ -1,27 +1,38 @@
 const jwt = require('jsonwebtoken');
-const { AuthenticationError } = require('apollo-server'); // Import AuthenticationError from Apollo Server
 
+// set token secret and expiration date
 const secret = 'mysecretsshhhhh';
 const expiration = '2h';
 
-const authMiddleware = async ({ req }) => {
-  let token = req.headers.authorization || '';
+module.exports = {
+  // function for our authenticated routes
+  authMiddleware: function ({req}) {
+    // allows token to be sent via  req.query or headers
+    let token = req.query.token || req.headers.authorization || req.body.token;
 
-  if (token.startsWith('Bearer ')) {
-    token = token.slice(7); // Remove 'Bearer ' from the token string
-  }
+    if (req.headers.authorization) {
+      token = token.split(' ').pop().trim();
+    }
 
-  if (!token) {
-    throw new AuthenticationError('Authorization failed: Token not found.');
-  }
+    if (!token) {
+      return req;
+    }
 
-  try {
-    const { data } = jwt.verify(token, secret, { maxAge: expiration });
-    // Return the user data to be accessible in resolvers via context
-    return { user: data };
-  } catch (error) {
-    throw new AuthenticationError('Authorization failed: Invalid token.');
-  }
+    // verify token and get user data out of it
+    try {
+      const { data } = jwt.verify(token, secret, { maxAge: expiration });
+      req.user = data;
+    } catch {
+      console.log('Invalid token');
+      return req;
+    }
+
+    // send to next endpoint
+    return req;
+  },
+  signToken: function ({ username, email, _id }) {
+    const payload = { username, email, _id };
+
+    return jwt.sign({ data: payload }, secret, { expiresIn: expiration });
+  },
 };
-
-module.exports = { authMiddleware };
